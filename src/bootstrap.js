@@ -1,5 +1,5 @@
 "use strict";
-
+const os = require("os");
 const fs = require("fs-extra");
 const path = require("path");
 const mime = require("mime-types");
@@ -58,16 +58,17 @@ function getFileSizeInBytes(filePath) {
 
 function getFileData(fileName) {
   const filePath = path.join("data", "uploads", fileName);
-  // Parse the file metadata
-  const size = getFileSizeInBytes(filePath);
-  const ext = fileName.split(".").pop();
+  const size = fs.statSync(filePath)["size"];
+  const ext = filePath.split(".").pop();
   const mimeType = mime.lookup(ext);
 
   return {
-    path: filePath,
-    name: fileName,
-    size,
+    filepath: path.resolve(filePath),
+    originalFilename: fileName,
     type: mimeType,
+    mimetype: mimeType,
+    ext,
+    size,
   };
 }
 
@@ -87,15 +88,16 @@ async function uploadFile(file, name) {
     });
 }
 
-// Create an entry and attach files if there are any
-async function createEntry({ model, entry }) {
+
+async function createDocument({ model, document }) {
   try {
     // Actually create the entry in Strapi
-    await strapi.entityService.create(`api::${model}.${model}`, {
-      data: entry,
+    await strapi.documents(model).create({
+      data: document,
+      status: "published",
     });
   } catch (error) {
-    console.error({ model, entry, error });
+    console.error({ model, document, error });
   }
 }
 
@@ -163,14 +165,15 @@ async function importArticles() {
     const cover = await checkFileExistsBeforeUpload([`${article.slug}.jpg`]);
     const updatedBlocks = await updateBlocks(article.blocks);
 
-    await createEntry({
-      model: "article",
-      entry: {
+    await createDocument({
+      model: "api::article.article",
+      document: {
         ...article,
         cover,
         blocks: updatedBlocks,
         // Make sure it's not a draft
         publishedAt: Date.now(),
+        status: "published"
       },
     });
   }
@@ -179,9 +182,9 @@ async function importArticles() {
 async function importGlobal() {
   const favicon = await checkFileExistsBeforeUpload(["favicon.png"]);
   const shareImage = await checkFileExistsBeforeUpload(["default-image.png"])
-  return createEntry({
-    model: "global",
-    entry: {
+  return createDocument({
+    model: "api::global.global",
+    document: {
       ...global,
       favicon,
       // Make sure it's not a draft
@@ -197,9 +200,9 @@ async function importGlobal() {
 async function importAbout() {
   const updatedBlocks = await updateBlocks(about.blocks);
 
-  await createEntry({
-    model: "about",
-    entry: {
+  await createDocument({
+    model: "api::about.about",
+    document: {
       ...about,
       blocks: updatedBlocks,
       // Make sure it's not a draft
@@ -210,7 +213,7 @@ async function importAbout() {
 
 async function importCategories() {
   for (const category of categories) {
-    await createEntry({ model: "category", entry: category });
+    await createDocument({ model: "api::category.category", document: category });
   }
 }
 
@@ -218,9 +221,9 @@ async function importAuthors() {
   for (const author of authors) {
     const avatar = await checkFileExistsBeforeUpload([author.avatar]);
 
-    await createEntry({
-      model: "author",
-      entry: {
+    await createDocument({
+      model: "api::author.author",
+      document: {
         ...author,
         avatar,
       },
