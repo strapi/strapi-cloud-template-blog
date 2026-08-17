@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "download_documents",
+  "info": {
+    "singularName": "download-document",
+    "pluralName": "download-documents",
+    "displayName": "Download Document",
+    "description": "Download Centre policies, corporate governance, and audit certificates"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": [
+        "Corporate Profile",
+        "Governance & Compliance",
+        "KEBS & Quality Standards",
+        "Financial & Audit Summary",
+        "Supply Chain & Procurement"
+      ],
+      "required": true
+    },
+    "version_tag": {
+      "type": "string",
+      "required": true
+    },
+    "effective_date": {
+      "type": "date"
+    },
+    "file_attachment": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["files", "images"]
+    }
+  }
+}
